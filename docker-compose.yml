@@ -1,0 +1,106 @@
+version: "3.9"
+
+services:
+  db:
+    image: mariadb:11
+    container_name: pdns-db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MARIADB_USER: ${MYSQL_USER}
+      MARIADB_PASSWORD: ${MYSQL_PASSWORD}
+    volumes:
+      - ./data/mysql:/var/lib/mysql
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql:ro
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - pdns-net
+
+  pdns:
+    image: pschiffe/pdns-mysql:latest
+    container_name: pdns-server
+    restart: always
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "0.0.0.0:53:53/tcp"
+      - "0.0.0.0:53:53/udp"
+      - "8081:8081"
+    environment:
+      - PDNS_gmysql_host=db
+      - PDNS_gmysql_port=3306
+      - PDNS_gmysql_user=${MYSQL_USER}
+      - PDNS_gmysql_password=${MYSQL_PASSWORD}
+      - PDNS_gmysql_dbname=${MYSQL_DATABASE}
+      - PDNS_api=yes
+      - PDNS_api_key=${PDNS_API_KEY}
+      - PDNS_webserver=yes
+      - PDNS_webserver_address=${PDNS_WEBSERVER_ADDRESS}
+      - PDNS_webserver_port=${PDNS_WEBSERVER_PORT}
+      - PDNS_webserver_allow_from=0.0.0.0/0
+    networks:
+      - pdns-net
+
+  powerdns-admin:
+    image: powerdnsadmin/pda-legacy:latest
+    container_name: powerdns-admin
+    restart: unless-stopped
+    depends_on:
+      - pdns
+      - db
+    ports:
+      - "0.0.0.0:9191:80"
+    environment:
+      - SQLALCHEMY_DATABASE_URI=mysql://pdns:pdnspass@db/pdns_admin
+      - GUNICORN_TIMEOUT=60
+      - GUNICORN_WORKERS=2
+      - GUNICORN_LOGLEVEL=info
+    logging:
+      driver: json-file
+      options:
+        max-size: 50m
+    networks:
+      - pdns-net
+
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: phpmyadmin
+    restart: unless-stopped
+    depends_on:
+      - db
+    ports:
+      - "8082:80"
+    environment:
+      - PMA_HOST=db
+      - PMA_PORT=3306
+      - PMA_USER=${MYSQL_USER}
+      - PMA_PASSWORD=${MYSQL_PASSWORD}
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+    networks:
+      - pdns-net
+
+  agent:
+    ports:
+      - "8083:8080"
+    build:
+      context: ./agent
+      dockerfile: Dockerfile
+    container_name: edgeproxy-agent
+    restart: unless-stopped
+    depends_on:
+      - pdns
+      - db
+    networks:
+      - pdns-net
+
+networks:
+  pdns-net:
+    driver: bridge

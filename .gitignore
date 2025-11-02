@@ -1,0 +1,13 @@
+# Ignore environment files
+.env
+.vscode
+
+# Data
+data/
+
+# Nginx logs
+/nginx/logs/*.log
+nginx/conf/pma.netward.eu.conf
+
+# Agent
+/agent/target/
