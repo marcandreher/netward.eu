@@ -21,7 +21,7 @@ services:
       timeout: 5s
       retries: 10
     networks:
-      - pdns-net
+      - netward-net
 
   pdns:
     image: pschiffe/pdns-mysql:latest
@@ -35,8 +35,8 @@ services:
       - "0.0.0.0:53:53/udp"
       - "8081:8081"
     environment:
-      - PDNS_gmysql_host=db
-      - PDNS_gmysql_port=3306
+      - PDNS_gmysql_host=${MYSQL_HOST}
+      - PDNS_gmysql_port=${MYSQL_PORT}
       - PDNS_gmysql_user=${MYSQL_USER}
       - PDNS_gmysql_password=${MYSQL_PASSWORD}
       - PDNS_gmysql_dbname=${MYSQL_DATABASE}
@@ -47,7 +47,7 @@ services:
       - PDNS_webserver_port=${PDNS_WEBSERVER_PORT}
       - PDNS_webserver_allow_from=0.0.0.0/0
     networks:
-      - pdns-net
+      - netward-net
 
   powerdns-admin:
     image: powerdnsadmin/pda-legacy:latest
@@ -68,7 +68,7 @@ services:
       options:
         max-size: 50m
     networks:
-      - pdns-net
+      - netward-net
 
   phpmyadmin:
     image: phpmyadmin:latest
@@ -79,28 +79,41 @@ services:
     ports:
       - "8082:80"
     environment:
-      - PMA_HOST=db
-      - PMA_PORT=3306
+      - PMA_HOST=${MYSQL_HOST}
+      - PMA_PORT=${MYSQL_PORT}
       - PMA_USER=${MYSQL_USER}
       - PMA_PASSWORD=${MYSQL_PASSWORD}
       - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
     networks:
-      - pdns-net
+      - netward-net
 
-  agent:
+  proxy:
     ports:
-      - "8083:8080"
+      - "80:8080"
     build:
-      context: ./agent
+      context: ./proxy
       dockerfile: Dockerfile
-    container_name: edgeproxy-agent
+    container_name: netward-proxy
     restart: unless-stopped
     depends_on:
       - pdns
       - db
+    environment:
+      - MYSQL_HOST=${MYSQL_HOST}
+      - MYSQL_PORT=${MYSQL_PORT}
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+      - MYSQL_DATABASE=netward
+      - PDNS_API_KEY=${PDNS_API_KEY}
+      - PDNS_API_HOST=${PDNS_WEBSERVER_ADDRESS}
+      - PDNS_API_PORT=${PDNS_WEBSERVER_PORT}
+      - NETWARD_PREFIX=${NETWARD_PREFIX}
+      - NETWARD_HTTP1_POOL=${NETWARD_HTTP1_POOL}
+    volumes:
+      - ./data/proxy/logs:/app/logs
     networks:
-      - pdns-net
+      - netward-net
 
 networks:
-  pdns-net:
+  netward-net:
     driver: bridge
