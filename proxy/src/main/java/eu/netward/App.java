@@ -44,7 +44,7 @@ public class App extends AbstractVerticle {
         Vertx vertx = Vertx.vertx();
 
         ProxyHandler proxyHandler = new ProxyHandler();
-
+       
 
         vertx.deployVerticle(new HttpVerticle(proxyHandler, 8080))
                 .onSuccess(id -> logger.info("✓ Verticle deployed successfully: ID: {}", id))

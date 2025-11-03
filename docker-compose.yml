@@ -108,6 +108,7 @@ services:
       - PDNS_API_HOST=${PDNS_WEBSERVER_ADDRESS}
       - PDNS_API_PORT=${PDNS_WEBSERVER_PORT}
       - NETWARD_PREFIX=${NETWARD_PREFIX}
+      - NETWARD_PUBLIC_IP=${NETWARD_PUBLIC_IP}
       - NETWARD_HTTP1_POOL=${NETWARD_HTTP1_POOL}
     volumes:
       - ./data/proxy/logs:/app/logs

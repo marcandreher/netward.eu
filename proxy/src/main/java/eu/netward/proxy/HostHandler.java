@@ -21,7 +21,6 @@ public class HostHandler {
     // Sentinel value to represent "not found" in cache
     private static final NetwardZone NOT_FOUND = new NetwardZone();
 
-
     public HostHandler() {
         this.hostCache = Caffeine.newBuilder()
                 .expireAfterWrite(10, TimeUnit.MINUTES)
