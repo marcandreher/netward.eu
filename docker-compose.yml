@@ -33,7 +33,7 @@ services:
     ports:
       - "0.0.0.0:53:53/tcp"
       - "0.0.0.0:53:53/udp"
-      - "8081:8081"
+      - "${PDNS_WEBSERVER_PORT}:${PDNS_WEBSERVER_PORT}"
     environment:
       - PDNS_gmysql_host=${MYSQL_HOST}
       - PDNS_gmysql_port=${MYSQL_PORT}
@@ -112,6 +112,27 @@ services:
       - NETWARD_HTTP1_POOL=${NETWARD_HTTP1_POOL}
     volumes:
       - ./data/proxy/logs:/app/logs
+    networks:
+      - netward-net
+
+  agent:
+    build:
+      context: ./ip aagent
+      dockerfile: Dockerfile
+    container_name: netward-agent
+    restart: unless-stopped
+    depends_on:
+      - proxy
+      - pdns
+      - db
+    environment:
+      - MYSQL_HOST=${MYSQL_HOST}
+      - MYSQL_PORT=${MYSQL_PORT}
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+      - MYSQL_DATABASE=netward
+    volumes:
+      - ./data/agent/logs:/app/logs
     networks:
       - netward-net
 

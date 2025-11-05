@@ -6,5 +6,5 @@ RUN mvn clean package -DskipTests
 
 FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
-COPY --from=build /app/target/proxy-1.0.jar /app/proxy.jar
-ENTRYPOINT ["java", "-jar", "/app/proxy.jar"]
+COPY --from=build /app/target/agent-1.0.jar /app/agent.jar
+ENTRYPOINT ["java", "-jar", "/app/agent.jar"]

@@ -103,11 +103,28 @@ CREATE TABLE IF NOT EXISTS tsigkeys (
 DROP INDEX IF EXISTS namealgoindex ON tsigkeys;
 CREATE UNIQUE INDEX namealgoindex ON tsigkeys(name, algorithm);
 
+CREATE DATABASE IF NOT EXISTS netward CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+USE netward;
+
+CREATE TABLE IF NOT EXISTS `domains` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `tld` varchar(253) NOT NULL,
+  `active` tinyint(4) NOT NULL DEFAULT 0,
+  `cert` tinyint(4) NOT NULL DEFAULT 0,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `proxy_zones` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `domain_id` int(11) NOT NULL,
+  `record` varchar(253) NOT NULL,
+  `target` varchar(46) NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+COMMIT;
 
 -- Create PowerDNS Admin and application databases
 CREATE DATABASE IF NOT EXISTS pdns_admin CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-CREATE DATABASE IF NOT EXISTS netward CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
 
 -- Grant permissions to pdns user from any host
 GRANT ALL PRIVILEGES ON powerdns.* TO 'pdns'@'%';
